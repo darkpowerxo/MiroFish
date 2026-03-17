@@ -1,21 +1,22 @@
 """
-Zep图谱记忆更新服务
-将模拟中的Agent活动动态更新到Zep图谱中
+图谱记忆更新服务
+将模拟中的Agent活动动态更新到Neo4j图谱中
+（替代原Zep图谱记忆更新服务）
 """
 
-import os
 import time
 import threading
-import json
-from typing import Dict, Any, List, Optional, Callable
+import uuid
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
-from queue import Queue, Empty
+from queue import Empty, Queue
 
-from zep_cloud.client import Zep
+from neo4j import Driver
 
 from ..config import Config
 from ..utils.logger import get_logger
+from ..utils.neo4j_graph import get_driver
 
 logger = get_logger('mirofish.zep_graph_memory_updater')
 
@@ -231,18 +232,13 @@ class ZepGraphMemoryUpdater:
     def __init__(self, graph_id: str, api_key: Optional[str] = None):
         """
         初始化更新器
-        
+
         Args:
-            graph_id: Zep图谱ID
-            api_key: Zep API Key（可选，默认从配置读取）
+            graph_id: Neo4j图谱ID
+            api_key: 保留参数（兼容旧调用方），不再使用
         """
         self.graph_id = graph_id
-        self.api_key = api_key or Config.ZEP_API_KEY
-        
-        if not self.api_key:
-            raise ValueError("ZEP_API_KEY未配置")
-        
-        self.client = Zep(api_key=self.api_key)
+        self.driver: Driver = get_driver()
         
         # 活动队列
         self._activity_queue: Queue = Queue()
@@ -389,41 +385,57 @@ class ZepGraphMemoryUpdater:
     
     def _send_batch_activities(self, activities: List[AgentActivity], platform: str):
         """
-        批量发送活动到Zep图谱（合并为一条文本）
-        
+        批量将活动存入Neo4j图谱（作为ActivityNode节点）。
+
         Args:
             activities: Agent活动列表
             platform: 平台名称
         """
         if not activities:
             return
-        
-        # 将多条活动合并为一条文本，用换行分隔
+
         episode_texts = [activity.to_episode_text() for activity in activities]
         combined_text = "\n".join(episode_texts)
-        
-        # 带重试的发送
+
         for attempt in range(self.MAX_RETRIES):
             try:
-                self.client.graph.add(
-                    graph_id=self.graph_id,
-                    type="text",
-                    data=combined_text
-                )
-                
+                with self.driver.session() as session:
+                    session.run(
+                        """
+                        CREATE (a:ActivityNode {
+                            uuid: $uuid,
+                            graph_id: $graph_id,
+                            platform: $platform,
+                            description: $description,
+                            activity_count: $count,
+                            created_at: $created_at
+                        })
+                        """,
+                        uuid=uuid.uuid4().hex,
+                        graph_id=self.graph_id,
+                        platform=platform,
+                        description=combined_text,
+                        count=len(activities),
+                        created_at=datetime.now().isoformat(),
+                    )
+
                 self._total_sent += 1
                 self._total_items_sent += len(activities)
                 display_name = self._get_platform_display_name(platform)
-                logger.info(f"成功批量发送 {len(activities)} 条{display_name}活动到图谱 {self.graph_id}")
+                logger.info(
+                    f"成功批量存储 {len(activities)} 条{display_name}活动到图谱 {self.graph_id}"
+                )
                 logger.debug(f"批量内容预览: {combined_text[:200]}...")
                 return
-                
+
             except Exception as e:
                 if attempt < self.MAX_RETRIES - 1:
-                    logger.warning(f"批量发送到Zep失败 (尝试 {attempt + 1}/{self.MAX_RETRIES}): {e}")
+                    logger.warning(
+                        f"批量存储到Neo4j失败 (尝试 {attempt + 1}/{self.MAX_RETRIES}): {e}"
+                    )
                     time.sleep(self.RETRY_DELAY * (attempt + 1))
                 else:
-                    logger.error(f"批量发送到Zep失败，已重试{self.MAX_RETRIES}次: {e}")
+                    logger.error(f"批量存储到Neo4j失败，已重试{self.MAX_RETRIES}次: {e}")
                     self._failed_count += 1
     
     def _flush_remaining(self):
