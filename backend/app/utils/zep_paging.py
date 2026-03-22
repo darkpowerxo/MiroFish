@@ -1,7 +1,7 @@
-"""Neo4j Graph 分页读取工具。
+"""Neo4j Graph paging read utility.
 
-替代原 Zep 分页工具，通过 Cypher 查询从 Neo4j 中分页获取图谱节点和边。
-对调用方透明地返回完整列表，数据结构保持与原 Zep 接口兼容。
+Replaces the original Zep paging tool, fetching graph nodes and edges from Neo4j in pages via Cypher queries.
+Returns a complete list transparently to the caller; data structure remains compatible with the original Zep interface.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def fetch_all_nodes(
     max_items: int = _MAX_NODES,
     **_kwargs: Any,
 ) -> list[GraphNode]:
-    """分页获取图谱节点，最多返回 max_items 条（默认 2000）。"""
+    """Fetch graph nodes with pagination, returning at most max_items entries (default 2000)."""
     all_nodes: list[GraphNode] = []
     skip = 0
 
@@ -66,7 +66,7 @@ def fetch_all_edges(
     page_size: int = _DEFAULT_PAGE_SIZE,
     **_kwargs: Any,
 ) -> list[GraphEdge]:
-    """分页获取图谱所有边，返回完整列表。"""
+    """Fetch all graph edges with pagination, returning the complete list."""
     all_edges: list[GraphEdge] = []
     skip = 0
 

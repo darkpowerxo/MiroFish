@@ -1,6 +1,6 @@
 """
-图谱构建服务
-接口2：使用Neo4j + LangChain构建知识图谱（替代Zep Cloud）
+Graph builder service
+API 2: Build knowledge graph using Neo4j + LangChain (replaces Zep Cloud)
 """
 
 import json
@@ -27,7 +27,7 @@ logger = get_logger('mirofish.graph_builder')
 
 @dataclass
 class GraphInfo:
-    """图谱信息"""
+    """Graph information"""
     graph_id: str
     node_count: int
     edge_count: int
@@ -44,8 +44,8 @@ class GraphInfo:
 
 class GraphBuilderService:
     """
-    图谱构建服务
-    负责调用LLM提取实体/关系并存储到Neo4j知识图谱
+    Graph builder service
+    Calls LLM to extract entities/relations and stores them in the Neo4j knowledge graph
     """
 
     def __init__(
@@ -53,7 +53,7 @@ class GraphBuilderService:
         neo4j_uri: Optional[str] = None,
         neo4j_user: Optional[str] = None,
         neo4j_password: Optional[str] = None,
-        # 兼容旧调用方传入的 api_key 参数（忽略）
+        # Accept api_key argument for backward compatibility (ignored)
         api_key: Optional[str] = None,
     ):
         self.driver: Driver = get_driver()
@@ -63,13 +63,13 @@ class GraphBuilderService:
 
     @property
     def llm(self) -> LLMClient:
-        """延迟初始化LLM客户端"""
+        """Lazily initialize the LLM client"""
         if self._llm_client is None:
             self._llm_client = LLMClient()
         return self._llm_client
 
     # ------------------------------------------------------------------
-    # 公开接口：异步构建
+    # Public interface: async build
     # ------------------------------------------------------------------
 
     def build_graph_async(
@@ -82,10 +82,10 @@ class GraphBuilderService:
         batch_size: int = 3,
     ) -> str:
         """
-        异步构建图谱
+        Build the graph asynchronously
 
         Returns:
-            任务ID
+            Task ID
         """
         task_id = self.task_manager.create_task(
             task_type="graph_build",
@@ -115,28 +115,28 @@ class GraphBuilderService:
         chunk_overlap: int,
         batch_size: int,
     ):
-        """图谱构建工作线程"""
+        """Graph build worker thread"""
         try:
             self.task_manager.update_task(
-                task_id, status=TaskStatus.PROCESSING, progress=5, message="开始构建图谱..."
+                task_id, status=TaskStatus.PROCESSING, progress=5, message="Starting graph build..."
             )
 
-            # 1. 创建图谱（生成ID，初始化元数据）
+            # 1. Create graph (generate ID, initialise metadata)
             graph_id = self.create_graph(graph_name)
-            self.task_manager.update_task(task_id, progress=10, message=f"图谱已创建: {graph_id}")
+            self.task_manager.update_task(task_id, progress=10, message=f"Graph created: {graph_id}")
 
-            # 2. 保存本体信息
+            # 2. Save ontology information
             self.set_ontology(graph_id, ontology)
-            self.task_manager.update_task(task_id, progress=15, message="本体已设置")
+            self.task_manager.update_task(task_id, progress=15, message="Ontology set")
 
-            # 3. 文本分块
+            # 3. Text chunking
             chunks = TextProcessor.split_text(text, chunk_size, chunk_overlap)
             total_chunks = len(chunks)
             self.task_manager.update_task(
-                task_id, progress=20, message=f"文本已分割为 {total_chunks} 个块"
+                task_id, progress=20, message=f"Text split into {total_chunks} chunks"
             )
 
-            # 4. 分批提取实体并存入Neo4j
+            # 4. Extract entities in batches and store in Neo4j
             episode_uuids = self.add_text_batches(
                 graph_id,
                 chunks,
@@ -148,11 +148,11 @@ class GraphBuilderService:
                 ),
             )
 
-            # 5. 等待处理完成（Neo4j同步处理，立即完成）
-            self.task_manager.update_task(task_id, progress=90, message="处理完成，获取图谱信息...")
+            # 5. Wait for processing (Neo4j is synchronous, completes immediately)
+            self.task_manager.update_task(task_id, progress=90, message="Processing complete, retrieving graph info...")
             self._wait_for_episodes(episode_uuids)
 
-            # 6. 获取图谱信息
+            # 6. Get graph info
             graph_info = self._get_graph_info(graph_id)
 
             self.task_manager.complete_task(
@@ -171,11 +171,11 @@ class GraphBuilderService:
             self.task_manager.fail_task(task_id, error_msg)
 
     # ------------------------------------------------------------------
-    # 核心方法
+    # Core methods
     # ------------------------------------------------------------------
 
     def create_graph(self, name: str) -> str:
-        """创建图谱元数据节点，返回graph_id"""
+        """Create a graph metadata node and return graph_id"""
         graph_id = f"mirofish_{uuid.uuid4().hex[:16]}"
 
         with self.driver.session() as session:
@@ -189,11 +189,11 @@ class GraphBuilderService:
                 created_at=datetime.now().isoformat(),
             )
 
-        logger.info(f"图谱已创建: {graph_id} (name={name})")
+        logger.info(f"Graph created: {graph_id} (name={name})")
         return graph_id
 
     def set_ontology(self, graph_id: str, ontology: Dict[str, Any]):
-        """将本体定义存储到图谱元数据中"""
+        """Store the ontology definition in the graph metadata"""
         with self.driver.session() as session:
             session.run(
                 """
@@ -203,10 +203,10 @@ class GraphBuilderService:
                 graph_id=graph_id,
                 ontology_json=json.dumps(ontology, ensure_ascii=False),
             )
-        logger.info(f"本体已存储到图谱: {graph_id}")
+        logger.info(f"Ontology stored in graph: {graph_id}")
 
     def _get_ontology(self, graph_id: str) -> Dict[str, Any]:
-        """从Neo4j读取图谱本体"""
+        """Read the graph ontology from Neo4j"""
         with self.driver.session() as session:
             result = session.run(
                 "MATCH (m:GraphMeta {graph_id: $graph_id}) RETURN m.ontology_json AS ontology_json",
@@ -228,8 +228,8 @@ class GraphBuilderService:
         progress_callback: Optional[Callable] = None,
     ) -> List[str]:
         """
-        分批提取文本中的实体/关系并存入Neo4j。
-        返回每个处理批次的ID列表（用于兼容 _wait_for_episodes 接口）。
+        Extract entities/relations from text in batches and store them in Neo4j.
+        Returns a list of IDs per batch (for compatibility with the _wait_for_episodes interface).
         """
         ontology = self._get_ontology(graph_id)
         episode_ids: List[str] = []
@@ -243,7 +243,7 @@ class GraphBuilderService:
             if progress_callback:
                 progress = (i + len(batch_chunks)) / total_chunks
                 progress_callback(
-                    f"处理第 {batch_num}/{total_batches} 批 ({len(batch_chunks)} 块)...",
+                    f"Processing batch {batch_num}/{total_batches} ({len(batch_chunks)} chunks)...",
                     progress,
                 )
 
@@ -254,10 +254,10 @@ class GraphBuilderService:
                     self._store_extracted_entities(graph_id, extracted)
                     episode_ids.append(ep_id)
                 except Exception as e:
-                    logger.warning(f"批次 {batch_num} 处理失败: {str(e)}")
+                    logger.warning(f"Batch {batch_num} failed: {str(e)}")
                     episode_ids.append(ep_id)
 
-            # 避免LLM API请求过快
+            # Avoid sending LLM API requests too fast
             if i + batch_size < total_chunks:
                 time.sleep(0.5)
 
@@ -265,7 +265,7 @@ class GraphBuilderService:
 
     def _extract_entities_from_chunk(self, text: str, ontology: Dict[str, Any]) -> Dict[str, Any]:
         """
-        使用LLM从文本块中提取实体和关系。
+        Use LLM to extract entities and relations from text chunks.
         """
         entity_types = [e["name"] for e in ontology.get("entity_types", [])]
         edge_types = [e["name"] for e in ontology.get("edge_types", [])]
@@ -320,11 +320,11 @@ Only extract what is explicitly stated in the text."""
                 temperature=0.0,
             )
         except Exception as e:
-            logger.warning(f"实体提取失败: {str(e)[:100]}")
+            logger.warning(f"Entity extraction failed: {str(e)[:100]}")
             return {"nodes": [], "relationships": []}
 
     def _store_extracted_entities(self, graph_id: str, extracted: Dict[str, Any]) -> None:
-        """将LLM提取的实体和关系存入Neo4j"""
+        """Store LLM-extracted entities and relations in Neo4j"""
         nodes = extracted.get("nodes", [])
         relationships = extracted.get("relationships", [])
 
@@ -333,7 +333,7 @@ Only extract what is explicitly stated in the text."""
         if not isinstance(relationships, list):
             relationships = []
 
-        # 存储节点（MERGE by name，同名实体自动合并）
+        # Store nodes (MERGE by name; same-name entities are merged automatically)
         node_name_to_uuid: Dict[str, str] = {}
         with self.driver.session() as session:
             for node in nodes:
@@ -376,7 +376,7 @@ Only extract what is explicitly stated in the text."""
                 record = result.single()
                 node_name_to_uuid[name] = record["uuid"] if record else node_uuid
 
-            # 存储关系
+            # Store relations
             for rel in relationships:
                 if not isinstance(rel, dict):
                     continue
@@ -389,7 +389,7 @@ Only extract what is explicitly stated in the text."""
                     continue
 
                 edge_uuid = uuid.uuid4().hex
-                # 确保source/target节点存在（如果LLM只生成了关系但没有节点）
+                # Ensure source/target nodes exist (in case LLM only generated relations without nodes)
                 for nname in (source_name, target_name):
                     if nname not in node_name_to_uuid:
                         r2 = session.run(
@@ -447,14 +447,14 @@ Only extract what is explicitly stated in the text."""
         timeout: int = 600,
     ):
         """
-        Neo4j同步处理，无需等待。
-        保留此方法以兼容调用方（graph.py API层）的调用签名。
+        Neo4j processes synchronously; no waiting is required.
+        This method is kept for compatibility with callers (graph.py API layer).
         """
         if progress_callback:
-            progress_callback(f"处理完成: {len(episode_uuids)}/{len(episode_uuids)}", 1.0)
+            progress_callback(f"Processing complete: {len(episode_uuids)}/{len(episode_uuids)}", 1.0)
 
     def _get_graph_info(self, graph_id: str) -> GraphInfo:
-        """获取图谱统计信息"""
+        """Get graph statistics"""
         nodes = fetch_all_nodes(self.driver, graph_id)
         edges = fetch_all_edges(self.driver, graph_id)
 
@@ -473,10 +473,10 @@ Only extract what is explicitly stated in the text."""
 
     def get_graph_data(self, graph_id: str) -> Dict[str, Any]:
         """
-        获取完整图谱数据（包含详细信息）
+        Get full graph data (including detailed information)
 
         Returns:
-            包含nodes和edges的字典
+            Dictionary containing nodes and edges
         """
         nodes = fetch_all_nodes(self.driver, graph_id)
         edges = fetch_all_edges(self.driver, graph_id)
@@ -524,22 +524,22 @@ Only extract what is explicitly stated in the text."""
         }
 
     def delete_graph(self, graph_id: str):
-        """删除图谱（节点、边及元数据）"""
+        """Delete graph (nodes, edges, and metadata)"""
         with self.driver.session() as session:
-            # 删除图谱边
+            # Delete graph edges
             session.run(
                 "MATCH ()-[r:GRAPH_EDGE {graph_id: $graph_id}]->() DELETE r",
                 graph_id=graph_id,
             )
-            # 删除图谱节点
+            # Delete graph nodes
             session.run(
                 "MATCH (n:GraphNode {graph_id: $graph_id}) DELETE n",
                 graph_id=graph_id,
             )
-            # 删除元数据
+            # Delete metadata
             session.run(
                 "MATCH (m:GraphMeta {graph_id: $graph_id}) DELETE m",
                 graph_id=graph_id,
             )
-        logger.info(f"图谱已删除: {graph_id}")
+        logger.info(f"Graph deleted: {graph_id}")
 

@@ -5,33 +5,33 @@
 # Install: pip install -r requirements.txt
 # ===========================================
 
-# ============= 核心框架 =============
+# ============= Core Framework =============
 flask>=3.0.0
 flask-cors>=6.0.0
 
-# ============= LLM 相关 =============
-# OpenAI SDK（统一使用 OpenAI 格式调用 LLM）
+# ============= LLM Related =============
+# OpenAI SDK (Uses OpenAI Format call LLM uniformly)
 openai>=1.0.0
 
-# ============= Neo4j 图数据库 =============
-neo4j>=5.0.0
-# LangChain Community（Neo4j图集成）
+# ============= Neo4j Graph Database =============
+neo4j>=6.1.0
+# LangChain Community（Neo4j Image Integration）
 langchain-community>=0.2.0
 
-# ============= OASIS 社交媒体模拟 =============
-# OASIS 社交模拟框架
+# ============= OASIS Social media simulation =============
+# OASIS Social simulation framework
 camel-oasis==0.2.5
 camel-ai==0.2.78
 
-# ============= 文件处理 =============
+# ============= File Handling =============
 PyMuPDF>=1.24.0
-# 编码检测（支持非UTF-8编码的文本文件）
+# Encoding detection (supports non-UTF-8 encoded text files)
 charset-normalizer>=3.0.0
 chardet>=5.0.0
 
-# ============= 工具库 =============
-# 环境变量加载
+# ============= Tool Library =============
+# Environment variable loading
 python-dotenv>=1.0.0
 
-# 数据验证
+# Data Validation
 pydantic>=2.0.0

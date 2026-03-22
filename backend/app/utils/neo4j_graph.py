@@ -1,6 +1,6 @@
 """
-Neo4j图数据库客户端工具
-提供与Zep兼容的节点/边数据结构和Neo4j连接管理
+Neo4j graph database client utility
+Provides Zep-compatible node/edge data structures and Neo4j connection management
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ logger = get_logger('mirofish.neo4j_graph')
 @dataclass
 class GraphNode:
     """
-    节点数据结构，与原Zep节点接口兼容。
-    uuid_ 属性名保持与 zep-cloud SDK 一致，便于其他模块无缝切换。
+    Node data structure, compatible with the original Zep node interface.
+    The uuid_ attribute name is kept consistent with the zep-cloud SDK, enabling seamless switching for other modules.
     """
     uuid_: str
     name: str
@@ -28,14 +28,14 @@ class GraphNode:
     summary: str
     attributes: Dict[str, Any]
     created_at: Optional[str] = None
-    # 同步处理：节点创建时即视为已处理完成
+    # Synchronous processing: node is considered processed upon creation
     processed: bool = True
 
 
 @dataclass
 class GraphEdge:
     """
-    边数据结构，与原Zep边接口兼容。
+    Edge data structure, compatible with the original Zep edge interface.
     """
     uuid_: str
     name: str
@@ -51,8 +51,8 @@ class GraphEdge:
 
 def get_driver() -> Driver:
     """
-    根据Config创建并返回Neo4j驱动实例。
-    调用方负责在用完后关闭驱动（driver.close()）。
+    Create and return a Neo4j driver instance based on Config.
+    The caller is responsible for closing the driver after use (driver.close()).
     """
     return GraphDatabase.driver(
         Config.NEO4J_URI,
@@ -62,8 +62,8 @@ def get_driver() -> Driver:
 
 def init_graph_schema(driver: Driver) -> None:
     """
-    初始化Neo4j索引和约束，提升查询性能。
-    幂等操作，可重复调用。
+    Initialize Neo4j indexes and constraints to improve query performance.
+    Idempotent operation, can be called repeatedly.
     """
     with driver.session() as session:
         # Uniqueness constraint prevents duplicate nodes and eliminates MERGE race conditions
@@ -83,7 +83,7 @@ def init_graph_schema(driver: Driver) -> None:
 
 
 def node_from_record(record_node: Any) -> GraphNode:
-    """将Neo4j节点记录转换为GraphNode数据类"""
+    """Convert a Neo4j node record to a GraphNode dataclass"""
     props = dict(record_node)
     raw_attrs = props.get("attributes_json", "{}")
     try:
@@ -102,7 +102,7 @@ def node_from_record(record_node: Any) -> GraphNode:
 
 
 def edge_from_record(record_edge: Any) -> GraphEdge:
-    """将Neo4j关系记录转换为GraphEdge数据类"""
+    """Convert a Neo4j relationship record to a GraphEdge dataclass"""
     props = dict(record_edge)
     return GraphEdge(
         uuid_=props.get("uuid", ""),
