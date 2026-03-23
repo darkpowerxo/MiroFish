@@ -291,7 +291,7 @@ class SimulationRunner:
             
             return state
         except Exception as e:
-logger.error(f"Failed to load run state: {str(e)}")
+            logger.error(f"Failed to load run state: {str(e)}")
             return None
     
     @classmethod
@@ -333,14 +333,14 @@ logger.error(f"Failed to load run state: {str(e)}")
         # Check if already running
         existing = cls.get_run_state(simulation_id)
         if existing and existing.runner_status in [RunnerStatus.RUNNING, RunnerStatus.STARTING]:
-raise ValueError(f"Simulation already running: {simulation_id}")
+            raise ValueError(f"Simulation already running: {simulation_id}")
         
         # Load simulation config
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         config_path = os.path.join(sim_dir, "simulation_config.json")
         
         if not os.path.exists(config_path):
-raise ValueError(f"Simulation config not found, please call /prepare first")
+            raise ValueError(f"Simulation config not found, please call /prepare first")
         
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
@@ -356,7 +356,7 @@ raise ValueError(f"Simulation config not found, please call /prepare first")
             original_rounds = total_rounds
             total_rounds = min(total_rounds, max_rounds)
             if total_rounds < original_rounds:
-logger.info(f"Rounds truncated: {original_rounds} -> {total_rounds} (max_rounds={max_rounds})")
+                logger.info(f"Rounds truncated: {original_rounds} -> {total_rounds} (max_rounds={max_rounds})")
         
         state = SimulationRunState(
             simulation_id=simulation_id,
@@ -371,14 +371,14 @@ logger.info(f"Rounds truncated: {original_rounds} -> {total_rounds} (max_rounds=
         # If graph memory update is enabled, create updater
         if enable_graph_memory_update:
             if not graph_id:
-raise ValueError("graph_id is required when graph memory update is enabled")
+                raise ValueError("graph_id is required when graph memory update is enabled")
             
             try:
                 ZepGraphMemoryManager.create_updater(simulation_id, graph_id)
                 cls._graph_memory_enabled[simulation_id] = True
-logger.info(f"Graph memory update enabled: simulation_id={simulation_id}, graph_id={graph_id}")
+                logger.info(f"Graph memory update enabled: simulation_id={simulation_id}, graph_id={graph_id}")
             except Exception as e:
-logger.error(f"Failed to create graph memory updater: {e}")
+                logger.error(f"Failed to create graph memory updater: {e}")
                 cls._graph_memory_enabled[simulation_id] = False
         else:
             cls._graph_memory_enabled[simulation_id] = False
@@ -398,7 +398,7 @@ logger.error(f"Failed to create graph memory updater: {e}")
         script_path = os.path.join(cls.SCRIPTS_DIR, script_name)
         
         if not os.path.exists(script_path):
-raise ValueError(f"Script not found: {script_path}")
+            raise ValueError(f"Script not found: {script_path}")
         
         # Create action queue
         action_queue = Queue()
@@ -464,7 +464,7 @@ raise ValueError(f"Script not found: {script_path}")
             monitor_thread.start()
             cls._monitor_threads[simulation_id] = monitor_thread
             
-logger.info(f"Simulation started successfully: {simulation_id}, pid={process.pid}, platform={platform}")
+            logger.info(f"Simulation started successfully: {simulation_id}, pid={process.pid}, platform={platform}")
             
         except Exception as e:
             state.runner_status = RunnerStatus.FAILED
@@ -522,7 +522,7 @@ logger.info(f"Simulation started successfully: {simulation_id}, pid={process.pid
             if exit_code == 0:
                 state.runner_status = RunnerStatus.COMPLETED
                 state.completed_at = datetime.now().isoformat()
-logger.info(f"Simulation completed: {simulation_id}")
+                logger.info(f"Simulation completed: {simulation_id}")
             else:
                 state.runner_status = RunnerStatus.FAILED
                 # Read error info from main log file
@@ -534,15 +534,15 @@ logger.info(f"Simulation completed: {simulation_id}")
                             error_info = f.read()[-2000:]  # Get last 2000 characters
                 except Exception:
                     pass
-state.error = f"Process exit code: {exit_code}, error: {error_info}"
-logger.error(f"Simulation failed: {simulation_id}, error={state.error}")
+                state.error = f"Process exit code: {exit_code}, error: {error_info}"
+                logger.error(f"Simulation failed: {simulation_id}, error={state.error}")
             
             state.twitter_running = False
             state.reddit_running = False
             cls._save_run_state(state)
             
         except Exception as e:
-logger.error(f"Monitor thread exception: {simulation_id}, error={str(e)}")
+            logger.error(f"Monitor thread exception: {simulation_id}, error={str(e)}")
             state.runner_status = RunnerStatus.FAILED
             state.error = str(e)
             cls._save_run_state(state)
@@ -552,9 +552,9 @@ logger.error(f"Monitor thread exception: {simulation_id}, error={str(e)}")
             if cls._graph_memory_enabled.get(simulation_id, False):
                 try:
                     ZepGraphMemoryManager.stop_updater(simulation_id)
-logger.info(f"Graph memory update stopped: simulation_id={simulation_id}")
+                    logger.info(f"Graph memory update stopped: simulation_id={simulation_id}")
                 except Exception as e:
-logger.error(f"Failed to stop graph memory updater: {e}")
+                    logger.error(f"Failed to stop graph memory updater: {e}")
                 cls._graph_memory_enabled.pop(simulation_id, None)
             
             # Clean up process resources
@@ -619,11 +619,11 @@ logger.error(f"Failed to stop graph memory updater: {e}")
                                     if platform == "twitter":
                                         state.twitter_completed = True
                                         state.twitter_running = False
-logger.info(f"Twitter simulation completed: {state.simulation_id}, total_rounds={action_data.get('total_rounds')}, total_actions={action_data.get('total_actions')}")
+                                        logger.info(f"Twitter simulation completed: {state.simulation_id}, total_rounds={action_data.get('total_rounds')}, total_actions={action_data.get('total_actions')}")
                                     elif platform == "reddit":
                                         state.reddit_completed = True
                                         state.reddit_running = False
-logger.info(f"Reddit simulation completed: {state.simulation_id}, total_rounds={action_data.get('total_rounds')}, total_actions={action_data.get('total_actions')}")
+                                        logger.info(f"Reddit simulation completed: {state.simulation_id}, total_rounds={action_data.get('total_rounds')}, total_actions={action_data.get('total_actions')}")
                                     
                                     # Check if all enabled platforms have completed
                                     # If only one platform is running, only check that platform
@@ -632,7 +632,7 @@ logger.info(f"Reddit simulation completed: {state.simulation_id}, total_rounds={
                                     if all_completed:
                                         state.runner_status = RunnerStatus.COMPLETED
                                         state.completed_at = datetime.now().isoformat()
-logger.info(f"All platform simulations completed: {state.simulation_id}")
+                                        logger.info(f"All platform simulations completed: {state.simulation_id}")
                                 
                                 # Update round info (from round_end event)
                                 elif event_type == "round_end":
@@ -682,7 +682,7 @@ logger.info(f"All platform simulations completed: {state.simulation_id}")
                             pass
                 return f.tell()
         except Exception as e:
-logger.warning(f"Failed to read action log: {log_path}, error={e}")
+            logger.warning(f"Failed to read action log: {log_path}, error={e}")
             return position
     
     @classmethod
@@ -725,7 +725,7 @@ logger.warning(f"Failed to read action log: {log_path}, error={e}")
         if IS_WINDOWS:
             # Windows: use taskkill command to terminate process tree
             # /F = force terminate, /T = terminate process tree (including children)
-logger.info(f"Terminating process tree (Windows): simulation={simulation_id}, pid={process.pid}")
+            logger.info(f"Terminating process tree (Windows): simulation={simulation_id}, pid={process.pid}")
             try:
                 # Try graceful termination first
                 subprocess.run(
@@ -737,7 +737,7 @@ logger.info(f"Terminating process tree (Windows): simulation={simulation_id}, pi
                     process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     # Force terminate
-logger.warning(f"Process not responding, force terminating: {simulation_id}")
+                    logger.warning(f"Process not responding, force terminating: {simulation_id}")
                     subprocess.run(
                         ['taskkill', '/F', '/PID', str(process.pid), '/T'],
                         capture_output=True,
@@ -745,7 +745,7 @@ logger.warning(f"Process not responding, force terminating: {simulation_id}")
                     )
                     process.wait(timeout=5)
             except Exception as e:
-logger.warning(f"taskkill failed, trying terminate: {e}")
+                logger.warning(f"taskkill failed, trying terminate: {e}")
                 process.terminate()
                 try:
                     process.wait(timeout=5)
@@ -755,7 +755,7 @@ logger.warning(f"taskkill failed, trying terminate: {e}")
             # Unix: use process group termination
             # Since start_new_session=True is used, process group ID equals main process PID
             pgid = os.getpgid(process.pid)
-logger.info(f"Terminating process group (Unix): simulation={simulation_id}, pgid={pgid}")
+            logger.info(f"Terminating process group (Unix): simulation={simulation_id}, pgid={pgid}")
             
             # Send SIGTERM to entire process group first
             os.killpg(pgid, signal.SIGTERM)
@@ -764,7 +764,7 @@ logger.info(f"Terminating process group (Unix): simulation={simulation_id}, pgid
                 process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 # If still running after timeout, force send SIGKILL
-logger.warning(f"Process group not responding to SIGTERM, force terminating: {simulation_id}")
+                logger.warning(f"Process group not responding to SIGTERM, force terminating: {simulation_id}")
                 os.killpg(pgid, signal.SIGKILL)
                 process.wait(timeout=5)
     
@@ -773,10 +773,10 @@ logger.warning(f"Process group not responding to SIGTERM, force terminating: {si
         """Stop simulation"""
         state = cls.get_run_state(simulation_id)
         if not state:
-raise ValueError(f"Simulation not found: {simulation_id}")
+            raise ValueError(f"Simulation not found: {simulation_id}")
         
         if state.runner_status not in [RunnerStatus.RUNNING, RunnerStatus.PAUSED]:
-raise ValueError(f"Simulation not running: {simulation_id}, status={state.runner_status}")
+            raise ValueError(f"Simulation not running: {simulation_id}, status={state.runner_status}")
         
         state.runner_status = RunnerStatus.STOPPING
         cls._save_run_state(state)
@@ -790,7 +790,7 @@ raise ValueError(f"Simulation not running: {simulation_id}, status={state.runner
                 # Process no longer exists
                 pass
             except Exception as e:
-logger.error(f"Failed to terminate process group: {simulation_id}, error={e}")
+                logger.error(f"Failed to terminate process group: {simulation_id}, error={e}")
                 # Fall back to direct process termination
                 try:
                     process.terminate()
@@ -808,12 +808,12 @@ logger.error(f"Failed to terminate process group: {simulation_id}, error={e}")
         if cls._graph_memory_enabled.get(simulation_id, False):
             try:
                 ZepGraphMemoryManager.stop_updater(simulation_id)
-logger.info(f"Graph memory update stopped: simulation_id={simulation_id}")
+                logger.info(f"Graph memory update stopped: simulation_id={simulation_id}")
             except Exception as e:
-logger.error(f"Failed to stop graph memory updater: {e}")
+                logger.error(f"Failed to stop graph memory updater: {e}")
             cls._graph_memory_enabled.pop(simulation_id, None)
         
-logger.info(f"Simulation stopped: {simulation_id}")
+        logger.info(f"Simulation stopped: {simulation_id}")
         return state
     
     @classmethod
@@ -1122,7 +1122,7 @@ logger.info(f"Simulation stopped: {simulation_id}")
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         
         if not os.path.exists(sim_dir):
-return {"success": True, "message": "Simulation directory does not exist, no cleanup needed"}
+            return {"success": True, "message": "Simulation directory does not exist, no cleanup needed"}
         
         cleaned_files = []
         errors = []
@@ -1149,7 +1149,7 @@ return {"success": True, "message": "Simulation directory does not exist, no cle
                     os.remove(file_path)
                     cleaned_files.append(filename)
                 except Exception as e:
-errors.append(f"Failed to delete {filename}: {str(e)}")
+                    errors.append(f"Failed to delete {filename}: {str(e)}")
         
         # Clean up action logs in platform directories
         for dir_name in dirs_to_clean:
@@ -1161,13 +1161,13 @@ errors.append(f"Failed to delete {filename}: {str(e)}")
                         os.remove(actions_file)
                         cleaned_files.append(f"{dir_name}/actions.jsonl")
                     except Exception as e:
-errors.append(f"Failed to delete {dir_name}/actions.jsonl: {str(e)}")
+                        errors.append(f"Failed to delete {dir_name}/actions.jsonl: {str(e)}")
         
         # Clean up in-memory run state
         if simulation_id in cls._run_states:
             del cls._run_states[simulation_id]
         
-logger.info(f"Simulation log cleanup complete: {simulation_id}, deleted files: {cleaned_files}")
+        logger.info(f"Simulation log cleanup complete: {simulation_id}, deleted files: {cleaned_files}")
         
         return {
             "success": len(errors) == 0,
@@ -1197,13 +1197,13 @@ logger.info(f"Simulation log cleanup complete: {simulation_id}, deleted files: {
         if not has_processes and not has_updaters:
             return  # Nothing to clean up, return silently
         
-logger.info("Cleaning up all simulation processes...")
+        logger.info("Cleaning up all simulation processes...")
         
         # First stop all graph memory updaters (stop_all prints logs internally)
         try:
             ZepGraphMemoryManager.stop_all()
         except Exception as e:
-logger.error(f"Failed to stop graph memory updaters: {e}")
+            logger.error(f"Failed to stop graph memory updaters: {e}")
         cls._graph_memory_enabled.clear()
         
         # Copy dict to avoid modification during iteration
@@ -1212,7 +1212,7 @@ logger.error(f"Failed to stop graph memory updaters: {e}")
         for simulation_id, process in processes:
             try:
                 if process.poll() is None:  # Process still running
-logger.info(f"Terminating simulation process: {simulation_id}, pid={process.pid}")
+                    logger.info(f"Terminating simulation process: {simulation_id}, pid={process.pid}")
                     
                     try:
                         # Use cross-platform process termination method
@@ -1239,7 +1239,7 @@ logger.info(f"Terminating simulation process: {simulation_id}, pid={process.pid}
                     try:
                         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
                         state_file = os.path.join(sim_dir, "state.json")
-logger.info(f"Attempting to update state.json: {state_file}")
+                        logger.info(f"Attempting to update state.json: {state_file}")
                         if os.path.exists(state_file):
                             with open(state_file, 'r', encoding='utf-8') as f:
                                 state_data = json.load(f)
@@ -1247,14 +1247,14 @@ logger.info(f"Attempting to update state.json: {state_file}")
                             state_data['updated_at'] = datetime.now().isoformat()
                             with open(state_file, 'w', encoding='utf-8') as f:
                                 json.dump(state_data, f, indent=2, ensure_ascii=False)
-logger.info(f"Updated state.json status to stopped: {simulation_id}")
+                            logger.info(f"Updated state.json status to stopped: {simulation_id}")
                         else:
-logger.warning(f"state.json does not exist: {state_file}")
+                            logger.warning(f"state.json does not exist: {state_file}")
                     except Exception as state_err:
-logger.warning(f"Failed to update state.json: {simulation_id}, error={state_err}")
+                        logger.warning(f"Failed to update state.json: {simulation_id}, error={state_err}")
                         
             except Exception as e:
-logger.error(f"Failed to clean up process: {simulation_id}, error={e}")
+                logger.error(f"Failed to clean up process: {simulation_id}, error={e}")
         
         # Clean up file handles
         for simulation_id, file_handle in list(cls._stdout_files.items()):
@@ -1277,7 +1277,7 @@ logger.error(f"Failed to clean up process: {simulation_id}, error={e}")
         cls._processes.clear()
         cls._action_queues.clear()
         
-logger.info("Simulation process cleanup complete")
+        logger.info("Simulation process cleanup complete")
     
     @classmethod
     def register_cleanup(cls):
@@ -1315,7 +1315,7 @@ logger.info("Simulation process cleanup complete")
             """Signal handler: clean up simulation processes first, then call original handler"""
             # Only print log if there are processes to clean up
             if cls._processes or cls._graph_memory_enabled:
-    logger.info(f"Received signal {signum}, starting cleanup...")
+                logger.info(f"Received signal {signum}, starting cleanup...")
             cls.cleanup_all_simulations()
             
             # Call original signal handler to let Flask exit normally
@@ -1348,7 +1348,7 @@ logger.info("Simulation process cleanup complete")
                 signal.signal(signal.SIGHUP, cleanup_handler)
         except ValueError:
             # Not in main thread, can only use atexit
-logger.warning("Cannot register signal handler (not in main thread), using atexit only")
+            logger.warning("Cannot register signal handler (not in main thread), using atexit only")
         
         _cleanup_registered = True
     
@@ -1450,14 +1450,14 @@ logger.warning("Cannot register signal handler (not in main thread), using atexi
         """
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         if not os.path.exists(sim_dir):
-raise ValueError(f"Simulation not found: {simulation_id}")
+            raise ValueError(f"Simulation not found: {simulation_id}")
 
         ipc_client = SimulationIPCClient(sim_dir)
 
         if not ipc_client.check_env_alive():
-raise ValueError(f"Simulation environment not running or already closed, cannot execute Interview: {simulation_id}")
+            raise ValueError(f"Simulation environment not running or already closed, cannot execute Interview: {simulation_id}")
 
-logger.info(f"Sending Interview command: simulation_id={simulation_id}, agent_id={agent_id}, platform={platform}")
+        logger.info(f"Sending Interview command: simulation_id={simulation_id}, agent_id={agent_id}, platform={platform}")
 
         response = ipc_client.send_interview(
             agent_id=agent_id,
@@ -1512,14 +1512,14 @@ logger.info(f"Sending Interview command: simulation_id={simulation_id}, agent_id
         """
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         if not os.path.exists(sim_dir):
-raise ValueError(f"Simulation not found: {simulation_id}")
+            raise ValueError(f"Simulation not found: {simulation_id}")
 
         ipc_client = SimulationIPCClient(sim_dir)
 
         if not ipc_client.check_env_alive():
-raise ValueError(f"Simulation environment not running or already closed, cannot execute Interview: {simulation_id}")
+            raise ValueError(f"Simulation environment not running or already closed, cannot execute Interview: {simulation_id}")
 
-logger.info(f"Sending batch Interview command: simulation_id={simulation_id}, count={len(interviews)}, platform={platform}")
+        logger.info(f"Sending batch Interview command: simulation_id={simulation_id}, count={len(interviews)}, platform={platform}")
 
         response = ipc_client.send_batch_interview(
             interviews=interviews,
@@ -1569,19 +1569,19 @@ logger.info(f"Sending batch Interview command: simulation_id={simulation_id}, co
         """
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         if not os.path.exists(sim_dir):
-raise ValueError(f"Simulation not found: {simulation_id}")
+            raise ValueError(f"Simulation not found: {simulation_id}")
 
         # Get all Agent info from config file
         config_path = os.path.join(sim_dir, "simulation_config.json")
         if not os.path.exists(config_path):
-raise ValueError(f"Simulation config not found: {simulation_id}")
+            raise ValueError(f"Simulation config not found: {simulation_id}")
 
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
 
         agent_configs = config.get("agent_configs", [])
         if not agent_configs:
-raise ValueError(f"No Agents in simulation config: {simulation_id}")
+            raise ValueError(f"No Agents in simulation config: {simulation_id}")
 
         # Build batch interview list
         interviews = []
@@ -1593,7 +1593,7 @@ raise ValueError(f"No Agents in simulation config: {simulation_id}")
                     "prompt": prompt
                 })
 
-logger.info(f"Sending global Interview command: simulation_id={simulation_id}, agent_count={len(interviews)}, platform={platform}")
+        logger.info(f"Sending global Interview command: simulation_id={simulation_id}, agent_count={len(interviews)}, platform={platform}")
 
         return cls.interview_agents_batch(
             simulation_id=simulation_id,
@@ -1622,7 +1622,7 @@ logger.info(f"Sending global Interview command: simulation_id={simulation_id}, a
         """
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
         if not os.path.exists(sim_dir):
-raise ValueError(f"Simulation not found: {simulation_id}")
+            raise ValueError(f"Simulation not found: {simulation_id}")
         
         ipc_client = SimulationIPCClient(sim_dir)
         
@@ -1632,7 +1632,7 @@ raise ValueError(f"Simulation not found: {simulation_id}")
                 "message": "Environment already closed"
             }
         
-logger.info(f"Sending close environment command: simulation_id={simulation_id}")
+        logger.info(f"Sending close environment command: simulation_id={simulation_id}")
         
         try:
             response = ipc_client.send_close_env(timeout=timeout)
@@ -1704,7 +1704,7 @@ logger.info(f"Sending close environment command: simulation_id={simulation_id}")
             conn.close()
             
         except Exception as e:
-logger.error(f"Failed to read Interview history ({platform_name}): {e}")
+            logger.error(f"Failed to read Interview history ({platform_name}): {e}")
         
         return results
 

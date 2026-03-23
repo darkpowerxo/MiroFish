@@ -4,23 +4,22 @@
 
 <a href="https://trendshift.io/repositories/16144" target="_blank"><img src="https://trendshift.io/api/badge/repositories/16144" alt="666ghj%2FMiroFish | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-简洁通用的群体智能引擎，预测万物
+A simple and universal swarm intelligence engine that predicts everything.
 </br>
 <em>A Simple and Universal Swarm Intelligence Engine, Predicting Anything</em>
 
 <a href="https://www.shanda.com/" target="_blank"><img src="./static/image/shanda_logo.png" alt="666ghj%2MiroFish | Shanda" height="40"/></a>
 
-[![GitHub Stars](https://img.shields.io/github/stars/666ghj/MiroFish?style=flat-square&color=DAA520)](https://github.com/666ghj/MiroFish/stargazers)
-[![GitHub Watchers](https://img.shields.io/github/watchers/666ghj/MiroFish?style=flat-square)](https://github.com/666ghj/MiroFish/watchers)
-[![GitHub Forks](https://img.shields.io/github/forks/666ghj/MiroFish?style=flat-square)](https://github.com/666ghj/MiroFish/network)
+[![GitHub Stars](https://img.shields.io/github/stars/darkpowerxo/MiroFish?style=flat-square&color=DAA520)](https://github.com/darkpowerxo/MiroFish/stargazers)
+[![GitHub Watchers](https://img.shields.io/github/watchers/darkpowerxo/MiroFish?style=flat-square)](https://github.com/darkpowerxo/MiroFish/watchers)
+[![GitHub Forks](https://img.shields.io/github/forks/darkpowerxo/MiroFish?style=flat-square)](https://github.com/darkpowerxo/MiroFish/network)
 [![Docker](https://img.shields.io/badge/Docker-Build-2496ED?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/666ghj/MiroFish)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/darkpowerxo/MiroFish)
 
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/channels/1469200078932545606/1469201282077163739)
 [![X](https://img.shields.io/badge/X-Follow-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/mirofish_ai)
 [![Instagram](https://img.shields.io/badge/Instagram-Follow-E4405F?style=flat-square&logo=instagram&logoColor=white)](https://www.instagram.com/mirofish_ai/)
 
-[English](./README-EN.md) | [中文文档](./README.md)
+[English](./README.md) | [中文文档](./README-ch.md)
 
 </div>
 

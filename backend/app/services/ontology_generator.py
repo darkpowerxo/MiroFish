@@ -391,7 +391,7 @@ Please design entity types and relationship types suitable for social opinion si
             code_lines.append('')
             code_lines.append('')
         
-        code_lines.append('# ============== Relationship Type Definitions =============='
+        code_lines.append('# ============== Relationship Type Definitions ==============')
         code_lines.append('')
         
         # Generate relationship types

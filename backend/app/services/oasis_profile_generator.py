@@ -197,7 +197,7 @@ class OasisProfileGenerator:
             base_url=self.base_url
         )
         
-        # Neo4j client for retrieving rich context (zep_api_key parameter kept for compatibility, no longer used)
+        # Neo4j client for retrieving rich context (Neo4j parameter kept for compatibility, no longer used)
         self.neo4j_driver = None
         self.graph_id = graph_id
         

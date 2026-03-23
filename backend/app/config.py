@@ -27,10 +27,19 @@ class Config:
     # JSON config - disable ASCII escaping so non-ASCII chars display directly
     JSON_AS_ASCII = False
     
-    # LLM config (unified OpenAI format)
+    # LLM provider selection: 'openai' or 'claude'
+    LLM_PROVIDER = os.environ.get('LLM_PROVIDER', 'openai')
+
+    # OpenAI settings
     LLM_API_KEY = os.environ.get('LLM_API_KEY')
     LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
     LLM_MODEL_NAME = os.environ.get('LLM_MODEL_NAME', 'gpt-4o-mini')
+
+    # Claude (Anthropic) settings
+    CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY')
+    CLAUDE_MODEL_NAME = os.environ.get('CLAUDE_MODEL_NAME', 'claude-opus-4-5')
+    # Link users to the Anthropic Console to obtain an API key
+    ANTHROPIC_CONSOLE_URL = 'https://console.anthropic.com/settings/keys'
     
     # Neo4j config
     NEO4J_URI = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
@@ -69,8 +78,12 @@ class Config:
     def validate(cls):
         """Validate required configuration"""
         errors = []
-        if not cls.LLM_API_KEY:
-            errors.append("LLM_API_KEY is not configured")
+        if cls.LLM_PROVIDER == 'claude':
+            if not cls.CLAUDE_API_KEY:
+                errors.append("CLAUDE_API_KEY is not configured")
+        else:
+            if not cls.LLM_API_KEY:
+                errors.append("LLM_API_KEY is not configured")
         if not cls.NEO4J_URI:
             errors.append("NEO4J_URI is not configured")
         return errors
