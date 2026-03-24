@@ -1,8 +1,20 @@
 services:
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/yourpassword
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
+
   mirofish:
-    image: ghcr.io/666ghj/mirofish:latest
-    # 加速镜像（如拉取缓慢可替换上方地址）
-    # image: ghcr.nju.edu.cn/666ghj/mirofish:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mirofish
     env_file:
       - .env
@@ -10,5 +22,10 @@ services:
       - "3000:3000"
       - "5001:5001"
     restart: unless-stopped
+    depends_on:
+      - neo4j
     volumes:
       - ./backend/uploads:/app/backend/uploads
+
+volumes:
+  neo4j_data:
